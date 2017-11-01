@@ -1,0 +1,20 @@
+---
+title: "Comunio - Bundesliga Data"
+author: "Roman Bichlmeier"
+date: "28 Oktober 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Marketvalues
+
+```{r marketvalue, echo=FALSE}
+library(dygraphs)
+
+neuer_test <- dygraph(data_timeseries$'Marketvalue.2017-10-28'[data_timeseries$Spieler == "Neuer"])
+```
+
