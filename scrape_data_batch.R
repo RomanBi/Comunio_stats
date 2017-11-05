@@ -3,7 +3,7 @@
 if (!file.exists(paste0("data/data_timeseries_", Sys.Date(), ".RData"))) 
 {
      
-      packages_needed <- c("rvest", "dplyr", "htmltab")
+      packages_needed <- c("rvest", "dplyr", "tidyr", "htmltab")
       
       for (i in packages_needed) {
             #  require returns TRUE invisibly if it was able to load package
@@ -22,7 +22,6 @@ if (!file.exists(paste0("data/data_timeseries_", Sys.Date(), ".RData")))
             html_nodes(xpath = '//td[contains(@class, "clubPics")]//a') %>%
             html_attr("href")
       
-      list_enumerator <- 1
       data_timeseries_new <- data.frame()
       
       for (i in clubs) {
@@ -30,29 +29,29 @@ if (!file.exists(paste0("data/data_timeseries_", Sys.Date(), ".RData")))
             data_clubs$club <- i
             
             data_timeseries_new <- bind_rows(data_timeseries_new, data_clubs)
-            
-            list_enumerator <- list_enumerator + 1
       }
       
       #format and clean table
       Encoding(data_timeseries_new[,1]) <- "UTF-8"
-      data_timeseries_new$club <- gsub("[[:digit:]]|[[:punct:]]|squad", "", data_timeseries_new$club)
       
-      data_timeseries_new$Pkt. <- as.numeric(data_timeseries_new$Pkt.)
+      data_timeseries_new$Verein <- gsub(".*-", "", data_timeseries_new$club)
+      data_timeseries_new$Verein <- gsub("\\+", " ", data_timeseries_new$Verein)
+      
+      data_timeseries_new$Punkte <- as.numeric(data_timeseries_new$Pkt.)
       data_timeseries_new$Marktwert <- as.numeric(gsub("\\.", "", data_timeseries_new$Marktwert))
       
       #add date
-      names(data_timeseries_new)[names(data_timeseries_new) == "Pkt."] <- paste0("Points.", Sys.Date())
-      names(data_timeseries_new)[names(data_timeseries_new) == "Marktwert"] <- paste0("Marketvalue.", Sys.Date())
+      data_timeseries_new$Datum <- Sys.Date()
+      
       
       #add new data to timeseries
       load(file = "data/data_timeseries.RData")
       
-      
-      
-      if (!paste0("Points.", Sys.Date()) %in% names(data_timeseries)) {
-            data_timeseries <- full_join(data_timeseries, select(data_timeseries_new, -Position), by = c("Spieler", "club"))
+      if (!unique(data_timeseries_new$Datum) %in% data_timeseries$Datum) {
             
+            data_timeseries <- data_timeseries %>% rbind(select(data_timeseries_new, -Pkt., -club)) %>% 
+                  arrange(Verein, Spieler, Datum)
+
             save(data_timeseries, file = "data/data_timeseries.RData")
             
             #create backup
